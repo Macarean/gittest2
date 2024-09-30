@@ -1,0 +1,1014 @@
+#include<iostream>
+#include<string>
+#include<cstring>
+#include<fstream>
+#include<vector>
+#include<stack>
+#include<ctime>
+
+using namespace std;
+
+struct maze {
+	int maze_num = 0;
+	int maze_col = 0;
+	int maze_row = 0;
+};
+struct cub_position {
+	int cx = -1;
+	int cy = -1;
+	int c_num = -1;
+};
+
+void rotate1(int**&buffer, int &col,int&row);//旋轉
+
+bool walk(vector<int>matrix[1024], vector< vector<int> >& mark,cub_position &cub,int**& buffer, int &cube_col,int &cube_row,int matrix_row,int cub_ro);//判斷走路方式
+
+void make_mark(vector<int>matrix[1024], vector< vector<int> >& mark, int**& buffer, int &cube_col,int &cube_row, int row1, int column1);
+
+bool check(vector<int>matrix[1024], vector< vector<int> >& mark, int matrix_row, int**& buffer, int cube_col, int cube_row, int row1, int column1, cub_position&temp);
+
+void delete_mark(vector< vector<int> >& mark, cub_position temp, maze buffer);
+
+int main(int argc, char* argv[]) {//有讀檔寫檔問題
+	vector<int>cube[1024];
+	int*** puzzle = new int**[21]{};
+	ifstream fin1;
+	string a;//一次只能讀一值，因為有空格
+	int row = 0;
+	int column = 0;
+	int num = 0;
+	fin1.open(argv[1], ios::in);
+	//fin1.open("S5-input.txt", ios::in);
+	while (getline(fin1,a)) {
+		if (a == "x") {
+			break;
+		}
+		
+		while (num<a.size()) {
+			if (a[num] != ' ') {
+				cube[column].push_back((int)a[num]-48);
+				//cube[column][row] = a[num];
+			}
+			num++;
+			//column++;
+		}
+		num = 0;
+		column +=1 ;
+		//row += 1;
+	}
+	
+	num = 0;
+	int first = 0;
+	int sec = 0;
+	int thir = 0;
+	int record[21] = {};
+	stack<cub_position>finder1;
+	stack<cub_position>finder2;
+	cub_position cub;
+	while (getline(fin1, a)) {
+		if (a == "x") {
+			/*cub.c_num = first;
+			finder2.push(cub);*/
+			first += 1;
+			sec = 0;
+			continue;
+		}
+		if (a == "0" && a.size() == 1) {
+			break;
+		}
+		
+		record[first] = a.size()-a.size()/2;
+		while (num < a.size()) {//
+			if (a[num] != ' ') {
+				if (puzzle[first]==nullptr) {
+					puzzle[first] = new int* [record[first]]{};
+				}
+				if (puzzle[first][sec] == nullptr) {
+					puzzle[first][sec] = new int[record[first]]{};
+				}
+				puzzle[first][sec][thir] = (int)a[num] - 48;
+				thir++;
+			}
+			num++;
+		}
+		num = 0;
+		thir = 0;
+		sec += 1;
+	}
+	fin1.close();
+
+	vector<vector<int> > mark;//拼圖要拼在這
+	for (int i = 0; i < column; i++) {
+		vector<int>buffer;
+		for (int j = 0; j < cube[i].size(); j++) {
+			buffer.push_back(22);
+		}
+		mark.push_back(buffer);
+	}
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	
+	/*for (int i = 0; i < 4; i++) {
+		rotate1(puzzle[0], record[0], record[0]);
+		for (int j = 0; j < record[0]; j++) {
+			for (int k = 0; k < record[0]; k++) {
+				cout << puzzle[0][j][k] << " ";
+			}
+			cout << endl;
+		}
+	}
+	system("pause");*/
+	/*for (int i = 0; i < 21; i++) {
+		if (puzzle[i] == nullptr) {
+			break;
+		}
+		for (int j = 0; j < record[i]; j++) {
+			for (int k = 0; k < record[i]; k++) {
+				cout << puzzle[i][j][k] << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}*/
+	int record_num = 0;
+	int record_num2 = 0;
+	int record_num3 = 0;
+	int record_num4 = 0;
+	int record_num5 = 0;
+	int** buffer2 = nullptr;
+	vector<maze>puz_size;
+	int clock_time1, clock_time2;
+	for (int i = 0; i <21; i++) {
+		if (puzzle[i] == nullptr) {
+			break;
+		}
+		record_num4 = record[i];
+		for (int m = 0; m < 4; m++) {
+			//rotate1(puzzle[i],record[i]);
+			//cout <<m <<" " << record[i] << endl;
+			for (int j = 0; j < record[i]; j++) {
+				for (int k = 0; k < record_num4; k++) {
+					if (puzzle[i][j][k] != 0) {
+						record_num = 1;
+					}
+				}
+				if (record_num == 0) {
+					delete[] puzzle[i][j];
+					puzzle[i][j] = nullptr;
+				}
+				else {
+					record_num2 += 1;
+				}
+				record_num = 0;
+			}
+			record_num = 0;
+			buffer2 = new int* [record_num2] {};
+			for (int j = 0; j < record[i]; j++) {
+				if (puzzle[i][j] != nullptr) {
+					buffer2[record_num3] = new int[record_num4]{};
+					for (int k = 0; k < record_num4; k++) {
+						buffer2[record_num3][k] = puzzle[i][j][k];
+					}
+					record_num3++;
+					delete[]puzzle[i][j];
+				}
+			}
+			/*cout << "buffer" << record_num2 << " " << record_num4 << endl;
+			for (int j = 0; j < record_num2; j++) {
+				for (int k = 0; k < record_num4; k++) {
+					cout << buffer2[j][k] << " ";
+				}
+				cout << endl;
+			}
+			system("pause");*/
+			record_num3 = 0;
+			delete[]puzzle[i];
+			puzzle[i] = new int* [record_num2] {};
+			for (int j = 0; j < record_num2; j++) {
+				puzzle[i][j] = new int[record_num4]{};
+				for (int k = 0; k < record_num4; k++) {
+					puzzle[i][j][k] = buffer2[j][k];
+				}
+				delete[]buffer2[j];
+			}
+			/*cout << record_num2 << " " << record_num4 << endl << endl;
+			for (int j = 0; j < record_num2; j++) {
+				for (int k = 0; k < record_num4; k++) {
+					cout << puzzle[i][j][k] << " ";
+				}
+				cout << endl;
+			}
+			cout << endl;*/
+			
+			delete[]buffer2;
+			record[i] = record_num2;
+			rotate1(puzzle[i], record[i],record_num4);
+			record_num2 = 0;
+		}
+		maze buffer3;
+		buffer3.maze_col = record[i];
+		buffer3.maze_row = record_num4;
+		buffer3.maze_num = i;
+		puz_size.push_back(buffer3);
+	}
+	//clock_time2 = clock();
+	//system("pause");
+	/*for (int k = 0; k < 4; k++) {
+		rotate1(puzzle[0], puz_size[0].maze_col, puz_size[0].maze_row);
+		for (int i = 0; i < puz_size[0].maze_col; i++) {
+			for (int j = 0; j < puz_size[0].maze_row; j++) {
+				cout << puzzle[0][i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+	system("pause");*/
+   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	//maze buffer;
+	bool checkout = true;
+	int cube_size = cube[0].size();
+	
+	int max1 = 0;
+	int max2 = 0;
+	//finder1.push(cub);
+	//finder1.top().c_num = 0;
+	for (int i = first-1; i>=0; i--) {
+		cub.c_num = i;
+		finder2.push(cub);
+	}
+	clock_time1 = clock();
+	finder1.push(finder2.top());
+	finder2.pop();
+	int i = finder1.top().c_num;
+	while (1) {//有問題
+		//第一種，還沒全部拼完但不能拼
+		//第二種，還沒拼完但可以拼
+		//第三種，已經拼只剩最後一個但不能拼
+		//if (i >= first) {//換finder2
+		//	if (finder2.empty() && finder1.size() == first /*&& checkout == true*/) {//有錯
+		//		break;
+		//	}
+		//	i = finder2.top().c_num;
+		//	finder1.push(finder2.top());
+		//	finder2.pop();
+		//	j = 1;
+		//}
+
+		checkout= walk(cube, mark, finder1.top(), puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size,i);
+		//判斷可不可以拼
+		//cout << finder1.top().cx << " " << finder1.top().cy << " " << finder1.top().c_num << endl << endl;
+		
+		if (checkout == true) {
+			//if (j == 0) {
+			//	i += 1;//有錯
+			//	cub.cx = -1;
+			//	cub.cy = -1;
+			//	cub.c_num = i;
+			//	finder1.push(cub);
+			//	if (i == first) {
+			//		finder1.pop();
+			//	}
+			//}
+			make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+			if (!finder2.empty()) {
+				i = finder2.top().c_num;
+				finder1.push(finder2.top());
+				finder2.pop();
+			}
+			else {
+				if (finder2.empty() && finder1.size() == first) {//有錯
+					break;
+				}
+			}
+		}
+
+		//checkout==false -->自己在旋轉四次判斷是否正確--->一個check
+		//if--->no-->上一個旋轉四次是否正確
+
+		if (checkout == false) {
+			//cub = finder1.top();
+			//finder1.top().cx = -1;
+			//finder1.top().cy = -1;
+			//for (int k = 0; k <= 3; k++) {
+			//	rotate1(puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row);
+			//	checkout== walk(cube, mark, finder1.top(), puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size, i);
+			//	if (checkout == true) {
+			//		make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+			//		if (j == 0) {
+			//			i += 1;//有錯
+			//			cub.cx = -1;
+			//			cub.cy = -1;
+			//			cub.c_num = i;
+			//			finder1.push(cub);
+			//			if (i == first) {
+			//				finder1.pop();
+			//			}
+			//		}
+			//		else if (!finder2.empty()) {
+			//			i = finder2.top().c_num;
+			//			finder1.push(finder2.top());
+			//			finder2.pop();
+			//		}
+			//		else {
+			//			if (finder2.empty() && finder1.size() == first /*&& checkout == true*/) {//有錯
+			//				break;
+			//			}
+			//		}
+			//		break;
+			//	}
+			//}
+			//if (checkout == false) {
+			//	finder1.pop();
+			//	delete_mark(mark, finder1.top(), column, cube_size);
+			//	for (int k = 0; k <= 3; k++) {
+			//		rotate1(puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row);
+			//		checkout = check(cube, mark, cube_size, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy, finder1.top());
+			//		if (checkout == true) {
+			//			make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+			//			checkout = walk(cube, mark, cub, puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size, i);
+			//			if (checkout == true) {
+			//				finder1.push(cub);
+			//				if (j == 0) {
+			//					i += 1;//有錯
+			//					cub.cx = -1;
+			//					cub.cy = -1;
+			//					cub.c_num = i;
+			//					finder1.push(cub);
+			//					if (i == first) {
+			//						finder1.pop();
+			//					}
+			//				}
+			//				else if (!finder2.empty()) {
+			//					i = finder2.top().c_num;
+			//					finder1.push(finder2.top());
+			//					finder2.pop();
+			//				}
+			//				else {
+			//					if (finder2.empty() && finder1.size() == first /*&& checkout == true*/) {//有錯
+			//						break;
+			//					}
+			//				}
+
+			//			}
+			//			if (checkout == false) {
+			//				delete_mark(mark, finder1.top(), column, cube_size);
+			//			}
+			//		}
+			//	}
+			//	if (checkout == false) {
+			//		int h = finder1.size();
+			//		for (int k = 0; k < h; k++) {
+			//			finder2.push(finder1.top());
+			//			delete_mark(mark, finder2.top(), column, cube_size);
+			//			finder1.pop();
+			//		}
+			//		finder1.push(cub);
+			//	}
+			//}
+			cub = finder1.top();
+			finder1.pop();
+			int h = finder1.size();
+			if (finder1.size() == 0) {
+				cub.cx = -1;
+				cub.cy = -1;
+			}
+			for (int k = 0; k < h; k++) {
+				if (!finder1.empty()) {
+					finder2.push(finder1.top());
+					finder1.pop();
+					delete_mark(mark, finder2.top(), puz_size[finder2.top().c_num]);
+					for (int j= 0; j <= 3; j++) {
+						rotate1(puzzle[cub.c_num], puz_size[cub.c_num].maze_col, puz_size[cub.c_num].maze_row);
+						for (int l = 0; l < column; l++) {
+							for (int m = 0; m < cube_size; m++) {
+								if (l == cub.cy && m == cub.cx) {
+									continue;
+								}
+								checkout = check(cube, mark, cube_size, puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row,m,l, cub);
+								if (checkout == true) {
+									break;
+								}
+							}
+							if (checkout == true) {
+								break;
+							}
+						}
+						//checkout = walk(cube, mark, cub, puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size, i);
+
+						if (checkout == true) {
+							break;
+						}
+					}
+					if (checkout == true) {
+						break;
+					}
+				}
+				/*if (checkout == true) {
+					finder1.push(cub);
+					if (!finder2.empty()) {
+						i = finder2.top().c_num;
+						finder1.push(finder2.top());
+						finder2.pop();
+					}
+					break;
+				}*/
+			}
+			if (checkout == true) {
+				finder1.push(cub);
+				make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+				if (!finder2.empty()) {
+					i = finder2.top().c_num;
+					finder1.push(finder2.top());
+					finder2.pop();
+				}
+				else if (finder2.empty() && finder1.size() == first) {//有錯
+					break;
+				}
+			}
+			if (checkout == false) {
+				finder1.push(cub);
+			}
+
+			//for (int j = 0; j < finder1.size(); j++) {
+			//	delete_mark(mark, finder1.top(), column, cube_size);
+			//	for (int k = 0; k <= 3; k++) {//轉三次是不是對的
+			//		//delete_mark(mark, finder1.top(), puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row);
+			//		rotate1(puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row);
+			//		checkout = check(cube, mark, cube_size, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy, finder1.top());
+			//		if (checkout == true) {
+			//			make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+			//			checkout = walk(cube, mark, cub, puzzle[cub.c_num], puz_size[cub.c_num].maze_col, puz_size[cub.c_num].maze_row, cube_size, cub.c_num);
+			//			if (checkout == true) {
+			//				//make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+			//				finder1.push(cub);
+			//				make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+			//				if (!finder2.empty()) {
+			//					i = finder2.top().c_num;
+			//					finder1.push(finder2.top());
+			//					finder2.pop();
+			//				}
+			//				break;
+			//			}
+			//		}
+			//		if (checkout == false) {
+			//			delete_mark(mark, finder1.top(), column, cube_size);
+			//		}
+			//	}
+			//	if (checkout == true) {
+			//		break;
+			//	}
+			//	if (checkout == false) {
+			//		finder2.push(finder1.top());
+			//		finder1.pop();
+			//	}
+			//}
+			//if (checkout == false) {
+			//	finder1.push(cub);
+			//}
+		}
+
+
+
+		//if (checkout == false) {
+		//	bool checkout3 = false;
+		//	int a_x = finder1.top().cx;
+		//	int b_y = finder1.top().cy;
+		//	finder1.top().cx = -1;
+		//	finder1.top().cy = -1;
+		//	rotate1(puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row);
+		//	checkout3 = walk(cube, mark, finder1.top(), puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size, i);
+		//	
+		//	if (checkout3 == true) {
+		//		make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+		//		if (j == 0) {
+		//			i += 1;//有錯
+		//			cub.cx = -1;
+		//			cub.cy = -1;
+		//			cub.c_num = i;
+		//			finder1.push(cub);
+		//			if (i == first) {
+		//				finder1.pop();
+		//			}
+		//		}
+		//		else if (!finder2.empty()) {
+		//			i = finder2.top().c_num;
+		//			finder1.push(finder2.top());
+		//			finder2.pop();
+		//		}
+		//		else {
+		//			if (finder2.empty() && finder1.size() == first /*&& checkout == true*/) {//有錯
+		//				break;
+		//			}
+		//		}
+		//	}
+
+		//	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		//	if (checkout3 == false) {
+		//		finder1.top().cx = a_x;
+		//		finder1.top().cy = b_y;
+		//		cub = finder1.top();
+		//		finder1.pop();
+		//		bool checkout2 = false;
+		//		delete_mark(mark, finder1.top(), column, cube_size);
+		//		for (int i = 0; i <= 3; i++) {
+		//			rotate1(puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row);
+
+		//			checkout2 = check(cube, mark, cube_size, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy, finder1.top());
+		//			if (checkout2 == true) {
+		//				make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+		//				checkout = walk(cube, mark, cub, puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size, i);
+		//				if (checkout == true) {
+		//					finder1.push(cub);
+		//					if (j == 0) {
+		//						i += 1;//有錯
+		//						cub.cx = -1;
+		//						cub.cy = -1;
+		//						cub.c_num = i;
+		//						finder1.push(cub);
+		//					}
+		//					else if (!finder2.empty()) {
+		//						i = finder2.top().c_num;
+		//						finder1.push(finder2.top());
+		//						finder2.pop();
+		//					}
+		//					else {
+		//						if (finder2.empty() && finder1.size() == first /*&& checkout == true*/) {//有錯
+		//							break;
+		//						}
+		//					}
+		//					break;
+		//				}
+		//			}
+		//		}
+		//		if (checkout2 == false) {
+		//			int h = finder1.size();
+		//			for (int k = 0; k < h; k++) {
+		//				finder2.push(finder1.top());
+		//				delete_mark(mark, finder2.top(), column, cube_size);
+		//				finder1.pop();
+		//			}
+		//			finder1.push(cub);
+		//		}
+		//		if (checkout2 == true) {
+		//			make_mark(cube, mark, puzzle[finder1.top().c_num], puz_size[finder1.top().c_num].maze_col, puz_size[finder1.top().c_num].maze_row, finder1.top().cx, finder1.top().cy);
+		//			checkout = walk(cube, mark, cub, puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row, cube_size, i);
+		//			if (checkout == true) {
+		//				
+		//			}
+		//			else if (checkout == false) {
+		//				int h = finder1.size();
+		//				for (int k = 0; k < h; k++) {
+		//					finder2.push(finder1.top());
+		//					delete_mark(mark, finder2.top(), column, cube_size);
+		//					finder1.pop();
+		//				}
+		//				finder1.push(cub);
+		//			}
+		//		}
+		//	}
+		//}
+
+		//if (checkout == true) {//可以
+		//	if (j == 0) {
+		//		i += 1;//有錯
+		//		cub.cx = -1;
+		//		cub.cy = -1;
+		//		cub.c_num = i;
+		//		finder1.push(cub);
+		//		if (i == first) {
+		//			finder1.pop();
+		//		}
+		//	}
+		//	else if (!finder2.empty()) {//第二次開始
+		//		max2 = finder2.size();
+		//		i = finder2.top().c_num;
+		//		finder1.push(finder2.top());
+		//		finder2.pop();
+		//	}
+		//	else {
+		//		if (finder2.empty() && finder1.size() == first && checkout == true) {//有錯
+		//			break;
+		//		}
+		//	}
+		//}
+		//else if(checkout == false) {//不可以
+		//	if (!finder1.empty()&&max2==0) {
+		//		cub = finder1.top();
+		//		finder1.pop();
+		//		finder2.push(finder1.top());
+		//		finder1.pop();
+		//		finder1.push(cub);
+		//		cub.cx = -1;
+		//		cub.cy = -1;
+		//		cub.c_num = -1;
+		//		delete_mark(mark, finder2.top(), column, cube_size);
+		//	}
+		//	else if (finder1.size()!=0) {
+		//		int h = finder1.size()-1;
+		//		//rotate1(puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row);
+		//		/*for (int i = 0; i < column; i++) {
+		//			for (int j = 0; j < num1; j++) {
+		//				cout << mark[i][j] << " ";
+		//			}
+		//			cout << endl;
+		//		}
+		//		cout << endl;*/
+		//		/*finder1.swap(finder2);
+		//		max2 = finder1.size();*/
+		//		cub = finder1.top();
+		//		finder1.pop();
+		//		for (int k = 0; k <h; k++) {
+		//			finder2.push(finder1.top());
+		//			finder1.pop();
+		//			delete_mark(mark, finder2.top(), column, cube_size);
+		//			/*cout << finder2.top().maze_num+1 << endl <<endl;*/
+		//			/*for (int i = 0; i < column; i++) {
+		//				for (int j = 0; j < num1; j++) {
+		//					cout << mark[i][j] << " ";
+		//				}
+		//				cout << endl;
+		//			}*/
+		//			//rotate1(puzzle[finder2.top().maze_row], puz_size[finder2.top().maze_row].maze_col, puz_size[finder2.top().maze_row].maze_row);
+		//		}
+		//		finder1.push(cub);
+		//		//rotate1(puzzle[i], puz_size[i].maze_col, puz_size[i].maze_row);
+		//		/*system("pause");*/
+		//	}
+		//	
+		//}
+		/*for (int i = 0; i < column; i++) {
+			for (int j = 0; j < cube_size; j++) {
+				cout << mark[i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;*/
+		//system("pause");
+	}
+	clock_time2 = clock();
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//輸出
+	//vector< vector<char> >end;
+	/*for (int i = 0; i < column; i++) {
+		vector<char>buffer;
+		for (int j = 0; j < cube_size; j++) {
+			if (mark[i][j]==22) {
+				mark[i][j] = 0;
+			}
+			mark[i][j] += 48;
+			buffer.push_back((char)mark[i][j]);
+		}
+		end.push_back(buffer);
+	}*/
+	for (int i = 0; i < column; i++) {
+		for (int j = 0; j < cube_size; j++) {
+			if (mark[i][j] == 22) {
+				mark[i][j] = 0;
+			}
+			mark[i][j] += 48;
+			cout << (char)mark[i][j] << " ";
+		}
+		cout << endl;
+	}
+	//cout << endl << clock_time1 << " " << clock_time2 << endl;
+}
+
+
+void rotate1(int**& buffer,int &col,int&row) {//有錯
+
+	
+	int temp = 0;
+
+	temp = col;
+	col = row;
+	row = temp;
+	int** buffer2 = new  int* [col] {};
+	for (int i = 0; i <col; i++) {
+		buffer2[i] = new int [row] {};
+		for (int j = 0; j < row; j++) {
+			/*temp = buffer[i][j];
+			buffer[i][j] = buffer[j][n-1-i];
+			buffer[j][n - 1 - i] = buffer[n - 1 - i][n - 1 - j];
+			buffer[n - 1 - i][n - 1 - j] = buffer[n - 1 - j][i];
+			buffer[n - 1 - j][i] = temp;*/
+			/*buffer[_x][_y] = buffer[i][j];*/
+			buffer2[i][j] = buffer[row-j-1][i];
+		}
+	}
+	for (int i = 0; i < row; i++) {
+		delete[]buffer[i];
+	}
+	delete buffer;
+	buffer = new int* [col] {};
+	for (int i = 0; i < col; i++) {
+		buffer[i] = new int[row] {};
+		for (int j = 0; j < row; j++) {
+			buffer[i][j] = buffer2[i][j];
+		}
+		delete[]buffer2[i];
+	}
+	delete[]buffer2;
+	/*cout << "rotate1" << endl;
+	for (int i = 0; i < col; i++) {
+		for (int j = 0; j < row; j++) {
+			cout << buffer[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl;*/
+	/*int a = 0;
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			if (buffer[i][j] != 0) {
+				a = 1;
+			}
+		}
+		if (a == 0) {
+			delete[]buffer[i];
+		}
+		a = 0;
+	}
+	a = 0;
+	int b = 0;
+	if (!column.empty()) {
+		for (int i = 0; i < column.size(); i++) {
+			column.pop_back();
+		}
+	}
+	for (int j = 0; j < n; j++) {
+		for (int i = 0; i < n; i++) {
+			if (buffer[i] == nullptr) {
+				continue;
+			}
+			if (buffer[i][j] != 0) {
+				a = 1;
+			}
+			b = i;
+		}
+		if (a == 0) {
+			column.push_back(b);
+		}
+	}*/
+	/*for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			cout << buffer[i][j] << " ";
+		}
+		cout << endl;
+	}
+	system("pause");*/
+}
+
+
+//找一個矩陣，找完後break，沒找完就停止迴圈
+bool walk(vector<int>matrix[1024], vector< vector<int> >& mark, cub_position& cub, int**& buffer, int &cube_col,int &cube_row, int matrix_row, int cub_ro) {//還要判斷有沒有走過此條路
+	int i = 0;
+	int num = 0;
+	bool maze_check = false;
+	cub_position temp;
+	int rota_num = 0;
+
+
+	while (1) {//大致上，找單一的matrix
+		if (!matrix[i].empty()) {
+			for (int j = 0; j < matrix[i].size(); j++) {//尋找起始點
+				if (i == cub.cy && j == cub.cx&&cub.c_num== cub_ro) {
+					//rotate1(buffer, cube_col, cube_row);
+					/*for (int k= 0; k <= 3; k++) {
+						rotate1(buffer, cube_col, cube_row);
+						maze_check = check(matrix, mark, matrix_row, buffer, cube_col, cube_row, j, i, temp);
+						if (maze_check == true) {
+							break;
+						}
+					}
+					if (maze_check == false) {
+						continue;
+					}*/
+					//rotate1(buffer, cube_col, cube_row);
+					continue;
+				}
+				else {
+					maze_check = check(matrix, mark, matrix_row, buffer, cube_col, cube_row, j, i, temp);
+				}
+				if (maze_check == true) {
+					cub = temp;
+					cub.c_num = cub_ro;
+					break;
+				}
+				if (maze_check == false) {
+					for (int k = 0; k <= 3; k++) {
+						rotate1(buffer, cube_col, cube_row);
+						if (mark[i][j] != 22 && buffer[0][0]!=0) {
+							continue;
+						}
+						if (matrix[i][j] == 0 && buffer[0][0] != 0) {
+							continue;
+						}
+						maze_check = check(matrix, mark, matrix_row, buffer, cube_col, cube_row, j, i, temp);
+						if (maze_check == true) {
+							cub = temp;
+							cub.c_num = cub_ro;
+							break;
+						}
+					}
+					if (maze_check == true) {
+						break;
+					}
+				}
+			}
+			if (maze_check == true) {
+				break;
+			}
+
+		}
+		else {
+			return maze_check;
+		}
+		i++;
+		//else {
+		//	if (maze_check == false && num == 3) {
+		//		break;
+		//	}
+		//	if (maze_check == false&&num<=3) {
+		//		rotate1(buffer, cube_col,cube_row);
+		//		num += 1;
+		//		i = -1;
+		//		/*for (int i = 0; i < size; i++) {
+		//			for (int j = 0; j < size; j++) {
+		//				cout << buffer[i][j] << " ";
+		//			}
+		//			cout << endl;
+		//		}
+		//		system("pause"); */
+		//	}
+		//}
+		//if (maze_check == true) {
+		//	break;
+		//}
+	}
+	
+	return maze_check;
+}
+
+
+//void findway(int**& buffer, stack<maze>&temp, int size) {//找路
+//
+//	maze a = {};
+//	for (int i = 0; i < size; i++) {
+//		for (int j = 0; j < size; j++) {
+//			if (buffer[i][j] != 0) {
+//				a.row = j;
+//				a.col = i;
+//				temp.push(a);
+//			}
+//		}
+//	}
+//}
+
+bool check(vector<int>matrix[1024], vector< vector<int> >& mark,int matrix_row, int**& buffer, int cube_col,int cube_row, int row1,int column1,cub_position &temp) {//起頭
+	int n = cube_col - 1;
+	int a = cube_row - 1;
+	while (row1+a>=matrix_row) {
+		return false;
+	}
+	bool ab = true;
+	int buffer_row = 0;
+	int buffer_column = 0;
+	/*cout << a << endl;
+	cout << column1 + n << endl;*/
+
+	//沒考慮到拼圖是正方形的
+	//輸入是起始點-->尋找起始點
+	int j = row1;
+	int k = row1;
+	if (!matrix[column1+n].empty()) {//有錯
+		for (int i = column1; i <= column1 + n;i++) {//細節性
+			
+			while (j<=k+a) {
+				if (mark[i][j] != 22 /*&& mark[i][j] != 0*/) {
+					if (buffer[buffer_column][buffer_row] != 0) {
+						return false;
+					}
+				}
+				if ((matrix[i][j]==0&&buffer[buffer_column][buffer_row]!=0)/*|| (matrix[i][j] != 0&& buffer[buffer_column][buffer_row]==0)*/) {//有錯
+				ab = false;
+				return ab;
+				}
+				else  {
+				ab = true;
+				buffer_row += 1;
+				//temp.c_num = buffer[buffer_column][buffer_row];
+				if (buffer_row > cube_row -1) {
+					buffer_row = 0;
+					buffer_column += 1;
+				}
+				
+				}
+				j++;
+			}
+			j=row1;
+			//for (int j = row1; j <= row1+a; j++) {
+			//	if ((matrix[i][j]==0&&buffer[buffer_column][buffer_row]!=0)|| (matrix[i][j] != 0&& buffer[buffer_column][buffer_row]==0)) {//有錯
+			//		ab = false;
+			//		return ab;
+			//		//buffer_column = 0;
+			//		//buffer_row = 0;
+			//		//break;
+			//	}
+			//	else  {
+			//		ab = true;
+			//		buffer_column += 1;
+			//		buffer_row += 1;
+			//		if (buffer_row > size-1) {
+			//			buffer_row = 0;
+			//		}
+			//		if (buffer_column>size-1) {
+			//			buffer_column = 0;
+			//		}
+
+			//	}
+			//}
+		}
+		temp.cy = column1;
+		temp.cx = row1;
+		return ab;
+	}
+	else {
+		return false;
+	}
+}
+
+//注意，有可能有些已經做好記號
+void make_mark(vector<int>matrix[1024], vector< vector<int> >& mark,int**& buffer, int &cube_col,int &cube_row, int row1, int column1) {
+	int a = cube_col- 1+column1;
+	int b = cube_row - 1 + row1;
+
+	int buffer_column = 0;
+	int buffer_row = 0;
+	for (int i = column1; i <= a;i++, buffer_column++) {
+		for (int j = row1; j <= b;j++,buffer_row++) {
+			if (buffer_row >= cube_row) {
+				buffer_row = 0;
+			}
+			if (buffer[buffer_column][buffer_row]==0) {
+				continue;
+			}
+			if (mark[i][j] == 22) {
+				mark[i][j] = buffer[buffer_column][buffer_row];
+			}
+		}
+	}
+	/*for (int i = 0; i < size; i++) {
+		for (int j = 0; j <size; j++) {
+			cout << buffer[i][j] << " ";
+		}
+		cout << endl;
+	}
+	system("pause");*/
+}
+
+void delete_mark(vector< vector<int> >& mark, cub_position temp, maze buffer) {
+
+	int a = buffer.maze_col - 1+ temp.cy;
+	int b = buffer.maze_row - 1+temp.cx;
+	int buffer_column = temp.cy;
+	int buffer_row = temp.cx;
+	for (int i = temp.cy; i <=a ; i++) {
+		for (int j = temp.cx; j <= b; j++) {
+			/*if (buffer_row >= cube_row) {
+				buffer_row = 0;
+			}
+			if (buffer[buffer_column][buffer_row] == 0) {
+				continue;
+			}
+			if (mark[i][j] == 22) {
+				mark[i][j] = buffer[buffer_column][buffer_row];
+			}*/
+			if (mark[i][j] == temp.c_num + 1) {
+				mark[i][j] = 22;
+			}
+		}
+	}
+	//for (int i = 0; i < matrix_column; i++) {
+	//	for (int j = 0; j < matrix_row; j++) {
+	//		if (mark[i][j]==temp.c_num+1) {
+	//			mark[i][j] = 22;
+	//		}
+	//	}
+	//}/*for (int i = 0; i < matrix_column; i++) {
+	/*	for (int j = 0; j < matrix_row; j++) {
+			cout << mark[i][j] << " ";
+		}
+		cout << endl;
+	}
+	system("pause");*/
+}
+
+
+
+
+
+
+
